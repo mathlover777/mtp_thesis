@@ -1,0 +1,51 @@
+This is BibTeX, Version 0.99d (TeX Live 2013/Debian)
+Capacity: max_strings=35307, hash_size=35307, hash_prime=30011
+The top-level auxiliary file: btp_thesis.aux
+The style file: unsrt.bst
+Database file #1: btp_thesis.bib
+Warning--empty journal in linkpredsocial
+Warning--empty journal in hittingtime
+Warning--empty journal in cccp
+Warning--empty journal in voter_model
+You've used 5 entries,
+            1791 wiz_defined-function locations,
+            470 strings with 4345 characters,
+and the built_in function-call counts, 1044 in all, are:
+= -- 87
+> -- 55
+< -- 1
++ -- 20
+- -- 15
+* -- 55
+:= -- 176
+add.period$ -- 16
+call.type$ -- 5
+change.case$ -- 5
+chr.to.int$ -- 0
+cite$ -- 9
+duplicate$ -- 53
+empty$ -- 93
+format.name$ -- 15
+if$ -- 230
+int.to.chr$ -- 0
+int.to.str$ -- 5
+missing$ -- 5
+newline$ -- 28
+num.names$ -- 5
+pop$ -- 23
+preamble$ -- 1
+purify$ -- 0
+quote$ -- 0
+skip$ -- 29
+stack$ -- 0
+substring$ -- 32
+swap$ -- 10
+text.length$ -- 1
+text.prefix$ -- 0
+top$ -- 0
+type$ -- 0
+warning$ -- 4
+while$ -- 8
+width$ -- 6
+write$ -- 52
+(There were 4 warnings)

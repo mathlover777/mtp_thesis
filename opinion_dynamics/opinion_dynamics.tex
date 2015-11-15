@@ -1,0 +1,186 @@
+\clearpage
+\vspace*{\stretch{2}}
+\begin{center}
+\huge{\textbf{Opinion Dynamics on Social Network}} 
+\end{center}
+\vspace{\stretch{3}}
+\clearpage
+\newcommand{\twopartdef}[4]
+{
+	\left\{
+		\begin{array}{ll}
+			#1 & \mbox{if } #2 \\
+			#3 & \mbox{if } #4 
+		\end{array}
+	\right.
+}
+\section*{Introduction}
+Opinion Dynamics means how opinions change with time in a social network. Many social networks that we see nowadays are characterized by opinion. Here opinion means for a given node (say user in Twitter or Reddit) and a given topic (say release of an upcoming movie) we want to study how the opinions vary with time especially say before and after some specific event (like the release of the movie). Also all these social networks have an underlying network between the nodes (like friend and follower in Twitter and friends in Facebook) and opinions usually flow among these networks (like say we get influenced by the review of a movie from a friend of us and we also get the same opinion without even seeing the movie). Now in social networks nodes have many such influence but if we dont have the information about how a particular user likes content of another particular influence then they are just binary - influences or not. But in real social network we have preference of opinion among our friends and also this may be both positive and negative (like if we already know that our movie choices does not match with our friends then our opinion on a particular movie is likely to be opposite).
+\\
+So in this work we take input a network of nodes (with a directed follower relationship) a set of opinions of the particular user on a particular topic in a time window. Now given this data we try to qunatize the influences between the nodes. Also another questions that we may ask are say given just the opinion values can we infer the influence network (completely unsupervised) and also after quantization can we use our model to predict future opinion sentiments of the nodes
+\\
+So typical usage scenerio can be in Election poll forcasting where we have the opinion values before election and we can predict the results. This can also be used while the campaign is going on to test whether the social media is coming on our side or not. It also has vast application in E-commerce. For example if an ecommerce is trying to launch two products together say Galaxy S6 and Iphone 6 and the ecommerce firms can gather the social data and infer which product is going to lead and restock accordingly and this is possible because we often get influenced by the transactions and reviews made by our peers. Also another optimistic usage can be 'review manipulation'. For example if we want to sell more IPhones then given the model we set our target opinion and use our model to find an initial condition which might lead to this final state. Once we find the initial conditions we can incentivize nodes according to the finding and if it behaves according to our learned model then its a huge gain for such ecommerce firms.
+\section*{Formal Problem Definition}
+We have a directed binary influence matrix $N$ i.e. if $N(x,y) = 1 \Longleftrightarrow x $is following $y$ and $N(x,y) = 0 \Longleftrightarrow x$ is not following $y$. Also we have a set of opinion values for each node in a time window. So we will divide the opinions in two sets by fixing a time separator. Opinion before the separator are in 'training' and after that are in 'test'. So using the training data we will learn the quantified Influence Matrix $A$ and will try to predict opinions in the 'training' set.
+\section*{The Voter Model}
+Many models have been proposed on how opinions vary over time on a social network. One such particular model is Voter Model which is simple to describe. Steps are described in Figure~\ref{fig:voter_model}. It consists of the following simple steps - (i) pick a random node (a voter),(ii) the voter adopts the state of a random neighbor.
+
+\begin{figure}
+\centering
+\includegraphics[width=\textwidth,height=\textheight,keepaspectratio]{opinion_dynamics/images/voter_model.png}
+\caption{Opinion Dynamics in Voter Model}
+\label{fig:voter_model}
+\end{figure}
+\section*{The proposed Model}
+Now suppose in the train window for node $x$ we have the set of opinions $S_{x} = \{(O_{i},t_{i})|1 \leq i \leq k\}$. Now using voter model for every node we want to maximize $P(S_{x}|A)$. Now to effectively use voter model need to define the following quantities. Now we define $n_{t}$ as the opinion vector at time instance $t$. Now in real social networks nodes dont advertise their opinion at every timestamp. So we also define $n_{t-}$ as the opinion vector of the nodes strictly before the time $t$. We also define $n_{t,x}$ in the following manner,
+\begin{equation}
+n_{t,x} (y) = \twopartdef {n_{t-} (y)} {x \neq y} {1-{n_{t-} (y)}} {x = y}
+\end{equation}
+as our opinion values are discrete and we model them as $1$ or $0$ so negation with $1$ just complements the opinion. Now from the voter model we know that the Probability that a paricular node will change in a given a timestamp is nothing but
+\begin{equation}
+P(n_{t-} \rightarrow n_{t,x}) = \displaystyle\sum_{y} \frac{N_{x,y}}{Nk_{x}} \xi (x,y,t)
+\end{equation}
+where $k_{x}$ is the number of influences of the node $x$ if we assume a complete uniform voter model. Ansd the $\xi(x,y,t)$ is an indicator function which is defined as follows,
+\begin{equation}
+\xi(x,y,t) = \twopartdef {1} {n_{t-}(x) \neq n_{t-}(y)} {0} {n_{t-}(x) = n_{t-}(y)}
+\end{equation}
+\section*{Optimization Problem formation with Maximum Likelihood Estimation}
+So in our proposed framework to come up with a MLE expression interms of $A$ we can use 
+\begin{equation}
+P(n_{t-} \rightarrow n_{t,x}) = \displaystyle\sum_{y} \frac{A_{x,y}}{N} \xi (x,y,t)
+\end{equation}
+where $\displaystyle\sum_{y} A_{xy}= 1$. Also note that we are only constrained by the $x$th row of A while while solving for $x$ and those parameters are in no other MLE as our graph is directed. So we can solve for each of the nodes separately and though this would take up a huge time but it is scalable as each of the opimization problems are tractable and all of them can done parallely accross distributed systems. Also from this we can say 
+\begin{equation}
+P(\mbox{node } x \mbox{ does not flip at time } t) = 1 - P(n_{t-} \rightarrow n_{t,x}) = 1 - \displaystyle\sum_{y} \frac{A_{x,y}}{N} \xi (x,y,t)
+\end{equation}
+ Using this definitions we can write 
+\begin{equation}
+P(S_x|A) = P(n_{t_{i}}(x) = O_{t_{i}}(x),\forall t_i, 0 \leq i \leq k|A)
+\end{equation}
+where $O_{t_{i}}(x)$ is the observed opinion of node $x$ at time instant $t_i$. Hence
+\begin{eqnarray}
+P(S_x|A) &\propto & \displaystyle\prod_{i}^{k} P(n_{t_1}(x) = O_{t_i}(x)|A,n_{t-})P(n_{t_0}|A) \nonumber \\
+		 &\propto & \displaystyle\prod_{i}^{k} P(n_{t_1}(x) = O_{t_i}(x)|A,n_{t-}) \nonumber \\
+		 &=& \displaystyle\prod_{i=1}^{k}(1 - \displaystyle\sum_{y} \frac{A_{x,y}}{N} \xi (x,y,t_i))^{I(n_{t_i}(x) = n_{t_i -}(x))}\displaystyle\prod_{i=1}^{k}(\displaystyle\sum_{y} \frac{A_{x,y}}{N} \xi (x,y,t_i))^{I(n_{t_i}(x) \neq n_{t_i -}(x))} \nonumber	
+\end{eqnarray}
+Now by taking logarithm on both sides we find
+\begin{eqnarray*}
+L &=& ln(P(S_{x}|G)) \\
+ &\propto & \displaystyle\sum_{i=1}^{k}I(n_{t_i}(x) = n_{t_i -}(x))ln(1 - \displaystyle\sum_{y} \frac{A_{x,y}}{N} \xi (x,y,t_i)) + \\
+  && {} \displaystyle\sum_{i=1}^{k}I(n_{t_i}(x) \neq n_{t_i -}(x))ln(\displaystyle\sum_{y} \frac{A_{x,y}}{N} \xi (x,y,t_i))
+\end{eqnarray*}
+So our optimization problem is given maximize $L$ given $\displaystyle\sum_{y} A_{xy}= 1$.
+\section*{Concave Maximization}
+Here we will show that our problem is concave maximization problem. Basically $L$ is the summation of a log-linear function. Now for a function $f$ to be concave we must have $Z^{T}\nabla^{2}fZ \leq 0 \forall Z$.Also if $Z^{T}\nabla^{2}f_{1}Z \leq 0 \forall Z$ and $Z^{T}\nabla^{2}f_{2}Z \leq 0 \forall Z$, then $Z^{T}\nabla^{2}(f_{1}+f_{2})Z \leq 0 \forall Z$. So if we can prove the log-linear function \\
+\begin{center}
+$f = ln(\displaystyle\sum_{i}a_{i}x_{i} + c)$
+\end{center}  is concave for $a_i,c \in \Re$ then we are done. Let 
+\begin{eqnarray*}
+M = \displaystyle\sum_{i}a_{i}x_{i} + c \nonumber
+\end{eqnarray*}
+Now its easy to see that
+\begin{eqnarray*}
+\nabla f = [\frac{a_i}{M}]_{1 \times k}
+\end{eqnarray*}
+and we can also show that
+\begin{eqnarray*}
+\nabla^2 f (i,j) = -\frac{a_ia_j}{M^2}
+\end{eqnarray*}
+Now if we define $D = [a_1,a_2,...,a_n]^T$. Then We can write 
+\begin{eqnarray*}
+\nabla^2 f = \frac{1}{M^2} DD^T
+\end{eqnarray*}
+So for $Z \in \Re^n$ we have 
+\begin{eqnarray*}
+Z^{T}\nabla^{2}fZ &=& -\frac{1}{M^2} (Z^TA)(Z^TA)^T \\ 
+				  &\leq& 0
+\end{eqnarray*}
+Hence the given optimization problem is a concave maximization and it can be easily solved numerically.
+\section*{Implementation}
+Now our optimization problem can be solved with gradient ascent, there are better methods. So this algorithm is implemented in mosek toolbox. For some experiments we used the given dataset, but we also developed modules to gather tweet stream from Twitter and extract friend follower information from Twitter. We also generated modules to generate synthetic data. We had to do many experiments by varying the time window that separates the train and test set and we also automated that. Now using the apis provided by the mosek api we developed modules to solve the maximum likelihood problems. For testing part, after learning the influence values we ran stochastic simulation on the test data and computed average output. We define accuracy as the overall fraction of opinion matches accross all the nodes in a particular simulation and we report the average one for several simulation with a particular time window.
+\section*{Experimental Results}
+In Figure~\ref{fig:Reddit_plot} we show how the accuracy varies accoring to the movement of the time window. In Figure~\ref{fig:Twitter_plot} we show it for the same. It seems that if we incrase the training data then the accuracy of our model increases in case of Reddit. But we don't find any recognizable trend in the Twitter Dataset. Which implies our model is not working on the Twitter dataset. This requires further examination.
+\begin{figure}
+\centering
+\includegraphics[width=\textwidth,height=\textheight,keepaspectratio]{opinion_dynamics/images/Twitter_plot.png}
+\caption{Effect of time window variation on Twitter}
+\label{fig:Twitter_plot}
+\end{figure}
+\begin{figure}
+\centering
+\includegraphics[width=\textwidth,height=\textheight,keepaspectratio]{opinion_dynamics/images/Reddit_plot.png}
+\caption{Effect of time window variation on Reddit}
+\label{fig:Reddit_plot}
+\end{figure}
+\section*{Drawbacks of the model}
+Now there may be various drawbacks in the model. One thing we observed that though we get good accuracy in Reddit dataset, the model that we generate is too much sparse unlike a real network. Also as we showed that the optimization problem is a concave maximization, but its not strictly concave one. So there may be various solutions given a test data and we might not get always lucky to pick the model that gives the best test accuracy.
+\begin{figure}
+\centering
+\includegraphics[width=\textwidth,height=\textheight,keepaspectratio]{opinion_dynamics/images/non_strict.png}
+\caption{Multiple solutions given same test Data}
+\label{fig:Reddit_plot}
+\end{figure}
+For example we may have these two graphs $G_1$ and $G_2$. Now let the nodes be $a,b,c,d$ in clock wise sense. Now in $G_1$ node $a$ can influence by node $b,d$ but only from $b$ in $G_2$. But if in training we just observe that $a$ has flipped then we can distinguish between the two cases unless we get more observation. However observations can be very sparse as Commercial Social Networking sites like Twitter or Reddit does not give all the opinions while crawling programatically. Also as it shown $G_1$ is more homogenious but we want heterogenious solutions. But in our model we do not have any extra optimization criteria to ensure this.
+\section*{Towards a better model}
+Also as we talked earlier our model has $n^2$ parameters to learn where number of nodes is $n$. Also there as we are solving a node by node basis so we might miss the herd mentallity where opinions of a large set of nodes change together. So to tackle these issues one interesting approach might be transforming the problem to a kernel space where we will change $a_{ij} \rightarrow K(x_i,x_j)$. Now if we notice the number of model parameters is $n$ and we can solve the problem in a single turn. Also the most interesting part is that is approach will give us a model value for each node which we can use as a distribution and which if we are lucky might follow some well studied distributions like the power law distribution.So now we frame our optimization problem as
+\begin{eqnarray*}
+\mbox{maximize } L 	&=& log(P(S|A)) \\
+				  	&=& log(\displaystyle\prod_{i \in V}[\displaystyle\prod_{k \in F_i}[\displaystyle\sum_{j 								\neq i} a_{ij}\xi (i,j,t_k)]\displaystyle\prod_{k \in \widetilde{F_{i}}} 											[1-\displaystyle\sum_{j \neq i}a_{ij}\xi (i,j,t_k)]]) \\
+				  	&& {} \mbox{subject to } \displaystyle\sum_{j} a_{ij} \leq 1 \forall i \in V
+\end{eqnarray*}
+Now this can be simplified as maximize 
+\begin{eqnarray*}
+L &=& 	\displaystyle\sum_{i \in V}[\displaystyle\sum_{k \in F_i}log[\displaystyle\sum_{j \neq i} a_{ij}\xi 				(i,j,t_k)]+\displaystyle\sum_{k \in \widetilde{F_{i}}}log\lambda_{i}^{k}] \\
+  && {} \mbox{with the additonal constraints } \lambda_{i}^{k} + \displaystyle\sum_{j \neq i}a_{ij}\xi (i,j,t_k) = 1 \forall k \in \widetilde{F_{i}} \forall i \in V
+\end{eqnarray*}
+Now if we take the kernel function $K(x_i,x_j) = K(x_i)K(x_j)$ where $K(x_i) = e^{-\theta_i}$ and $\theta_i$ is the global influence parameter of node $i$ then we can reframe the opimization problem as maximize 
+\begin{eqnarray*}
+L = \displaystyle\sum_{i \in V}[\displaystyle\sum_{k \in F_i}log[\displaystyle\sum_{j \neq i} e^{-\theta_i-\theta_j}\xi (i,j,t_k)]+\displaystyle\sum_{k \in \widetilde{F_{i}}}log\lambda_{i}^{k}]
+\end{eqnarray*}
+which can be further simplified as 
+\begin{eqnarray*}
+L  	&=&	-\displaystyle\sum_{i \in V}\displaystyle\sum_{k \in F_i}\theta_i+\displaystyle\sum_{i \in 						V}\displaystyle\sum_{k \in F_i}log[\displaystyle\sum_{j \neq i} e^{-\theta_j}\xi 									(i,j,t_k)]+\displaystyle\sum_{i \in V}\displaystyle\sum_{k \in \widetilde{F_{i}}}log\lambda_{i}^{k}\\
+	&& {} \mbox{with the constraints } \displaystyle\sum_{j \neq i}e^{-\theta_i-\theta_j} \leq 1 \forall i \in 			V\\
+	&& {} \mbox{and } \lambda_{i}^{k} + \displaystyle\sum_{j \neq i}e^{-\theta_i-\theta_j}\xi(i,j,t_k) = 1 				  \forall k \in \widetilde{F_i} \forall i\in V 
+\end{eqnarray*}
+Now we will show that $f := log(\displaystyle\sum_{i=1}^{n}a_ie^{m_ix_i})$ is convex where $m_i \in \Re$ and $a_i \geq 0$. Define
+\begin{eqnarray*}
+z := \displaystyle\sum_{i=1}^{n}a_ie^{m_ix_i}
+\end{eqnarray*}
+Hence we can show that
+\begin{eqnarray*}
+\nabla f (i) = \frac{a_im_ie^{m_ix_i}}{z}
+\end{eqnarray*}
+Now we can compute the Hessian in the following manner
+\begin{eqnarray*}
+\nabla^2 f(i,j) = \twopartdef {-\frac{a_{i}^{2}m_{i}^2e^{2m_ix_i}}{z^2} + \frac{a_im_i^2e^{m_ix_i}}{z}} {i = j} {-\frac{a_ia_jm_im_je^{m_ix_i+m_jx_j}}{z^2}} {i \neq j}
+\end{eqnarray*}
+Lets define $D = [a_im_ie^{m_ix_i}]_{n \times 1}$. Now we can write 
+\begin{eqnarray*}
+\nabla^2 f = \frac{1}{z^2}[zDiag(a_i^2m_i^2e^{m_ix_i})-DD^T]
+\end{eqnarray*}
+Now to show the convexivity,
+\begin{eqnarray*}
+Z^T \nabla^2 Z &=& \frac{1}{z^2}[z(\displaystyle\sum_{i=1}^{n} 																		Z_i^2a_im_i^2e^{m_ix_i})-(\displaystyle\sum_{i=1}^{n}Z_ia_im_ie^{m_ix_i})] \\
+			   &=& \frac{1}{z^2}[(\displaystyle\sum_{i=1}^{n}a_ie^{m_ix_i})(\displaystyle\sum_{i=1}^{n} 							Z_i^2a_im_i^2e^{m_ix_i}) - (\displaystyle\sum_{i=1}^{n}Z_ia_im_ie^{m_ix_i})] \\
+			    &\geq& 0 \mbox{ (using Cauchy–Schwarz Inequality)}
+\end{eqnarray*}
+Hence $f = log(\displaystyle\sum_{i=1}^{n}a_ie^{m_ix_i})$ is convex for all $a_i \geq 0,m_i \in \Re$. Now Lets define $M = -L$. Hence 
+\begin{eqnarray*}
+M &=& \displaystyle\sum_{i \in V}\displaystyle\sum_{k \in F_i}\theta_i-\displaystyle\sum_{i \in 						V}\displaystyle\sum_{k \in F_i}log[\displaystyle\sum_{j \neq i} e^{-\theta_j}\xi 									(i,j,t_k)]-\displaystyle\sum_{i \in V}\displaystyle\sum_{k \in \widetilde{F_{i}}}log\lambda_{i}^{k} \\
+	&=& f_1 - f_2 
+\end{eqnarray*}
+where $f_1$ is defined as 
+\begin{eqnarray*}
+f_1 = \displaystyle\sum_{i \in V}\displaystyle\sum_{k \in F_i}\theta_i-\displaystyle\sum_{i \in V}\displaystyle\sum_{k \in \widetilde{F_{i}}}log\lambda_{i}^{k}
+\end{eqnarray*}
+and $f_2$ is defined as
+\begin{eqnarray*}
+f_2 = \displaystyle\sum_{i \in V}\displaystyle\sum_{k \in F_i}log[\displaystyle\sum_{j \neq i} e^{-\theta_j}\xi (i,j,t_k)]
+\end{eqnarray*}
+Now clearly both $f_1$ and $f_2$ are convex and the constraints are convex. So they can be solved by a iterative algorithm given in \cite{cccp}. However the solution point is given there need not be the global maxima, it can be a saddle point also. So we need to look for better kernel function which gives us better mathematical behaviour.
+\\
+\\ Now to take care of our semidefinite problem, we need to add a regularizer.But if we add the entropy regularizer defined as $\lambda \displaystyle\sum_x \displaystyle\sum_y a_{xy}log(a_{xy})$ will not be a good idea because it does not try to make the model heterogenious nor sparse.A very common approach to learn sparse graph is to add an $L_1$ regularizer.Although addition of such regularizer can preserve the convexity, the problem becomes difficult to solve. Therefore we choose the following regularizer to incorporate sparsity
+\begin{eqnarray*}
+L &=& \displaystyle\sum_{i \in V}[\displaystyle\sum_{k \in F_i}log[\displaystyle\sum_{j \neq i} a_{ij}\xi (i,j,t_k)]+\displaystyle\sum_{k \in \widetilde{F_{i}}}log\lambda_{i}^{k}] - \lambda \displaystyle\sum_{i \neq j} \frac{1}{1 - a_{ij}}
+\end{eqnarray*}
