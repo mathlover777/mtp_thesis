@@ -104,6 +104,7 @@ Here $w$ and $v$ are weight vectors that we learn from the train data by minimiz
 \end{equation}
 Now as we have a linking function we can now use it for minimizing a loss function with a suitable regularizer. So this structural node, node-node scores and latent scores can be combined as a single optimization problem in the following manner,
 \begin{multline}
+\label{eq:1}
 	U,A,w,v,b = argmin_{U,A,w,v,b} \frac{1}{|O|}  \sum_{(i,j)}\in O  Loss( G(i,j), \\
 	 L(u_i^T A u_j + b_i + b_j + f_D(z_{ij};w) + f_M(x_i,x_j;v))) + \Omega(U,A,w,v,b)
 \end{multline}
@@ -125,7 +126,50 @@ U,A,v,w,b = argmin_{U,A,v,w,b} \frac{1}{|O|} \sum\limits_{i=1}^n \sum\limits_{j 
 Now we could have used gradient descent to optimize this but for a function of $Q(w) = \sum\limits_{i = 1}^n Q_i(w)$, the update step is $w_n = w_{n-1}  - \bigtriangledown Q(w_{n-1}) = w_{n-1} - \sum\limits_{i = 1}^n  \bigtriangledown Q_i(w_{n-1})$. As in our case we have a quadratic number of terms in the optimization function it will be difficult fot standard gradient descent. So we used Stochastic Gradient Descent. In stochastic gradient descent.  We randomly shuffle the indexes of the sumation functions and we do gradient descent for that function only ie. $w_n = w_{n-1}  - \bigtriangledown Q(w_{n-1})$ and in each epoch each of the sumation is taken exacly once but in a random order. We repeat the epochs until some provided convergence condition is met. So in our specific case we will select a $i$ and $j$ in each step and find the optimal parameters.
 
 \section*{Experimental results}
-Now for this specific study we have used our Movielens, Netflix, Cora, Cite, WebKb, Conflict and Prot-Prot datasets to do the experiments. We used SGD based matrix factorization to find optimum model parameters in each case. 
+Now for this specific study we have used our Movielens, Netflix, Cora, Cite, WebKb, Conflict and Prot-Prot datasets to do the experiments. We used SGD based matrix factorization to find optimum model parameters in each case.  We have performed two sets of experiments for each data case. For first case we have used the SGD based optimisation for direct minization specified in  \ref{eq:1}. Also the SGD based appproach is prone to sparseness of node feartures. The datasets used in the original paper contained less sparse feature where as our datasets have a large number of sparse features. So we have performed structual link prediction using the framework . Then we did some dimensionality reduction with taking less sparsed features, we used thresholds for each of the datasets to define less sparseness. Then we have run PCA on it to find main feature components. Also as the data we have is not temporal we also sampled the pairs in 80\% and 90\% for the experiments. Though it uses SGD still we found the algorithms very slow for moderate sized datasets, this is due to the fact that in the Ranking method we have to run $O(n^3)$ loop to find the triplets $i,j,k$. Though its a preprocessing step still the learning takes large time, this might due to the fact that reaching the convegence is slow for our datasets. Following are the results of our experiments:
+
+
+\begin{center}
+\begin{table}
+    \begin{tabular}{|l|l|l|}
+    \hline
+    Dataset - with features - 80 \% & MAP for Classification Loss & Map for Ranking Optimisation \\ \hline
+    WebKB                           & 0.1852                      & 0.2164                       \\ \hline
+    cora                            & 0.0349                      & 0.1101                       \\ \hline
+    cite                            & 0.0224                      & 0.1673                       \\ \hline
+    movielens                       & 0.401                       & 0.3178                       \\ \hline
+    conflict                        & 0.2341                      & 0.2214                       \\ \hline
+    Prot-prot                       & 0.0407                      & 0.0091                       \\ \hline
+    netflix                         & 0.3373                      & 0.2983                       \\ \hline
+    \end{tabular}
+\end{table}
+\end{center}
+
+
+\begin{center}
+\begin{table}
+    \begin{tabular}{|l|l|l|}
+    \hline
+    Dataset - with features - 90 \% & MAP for Classification Loss & Map for Ranking Optimisation \\ \hline
+    WebKB                           & 0.1204                      & 0.2102                       \\ \hline
+    cora                            & 0.0242                      & 0.0837                       \\ \hline
+    cite                            & 0.0163                      & 0.0928                       \\ \hline
+    movielens                       & 0.4316                      & 0.3681                       \\ \hline
+    conflict                        & 0.1077                      & 0.1019                       \\ \hline
+    Prot-prot                       & 0.0719                      & 0.0188                       \\ \hline
+    netflix                         & 0.3431                      & 0.3192                       \\ \hline
+    \end{tabular}
+\end{table}
+\end{center}
+
+\begin{center}
+
+\end{center}
+
+\begin{center}
+
+\end{center}
+
 %In Figure~\ref{fig:arbitration_study} we show the linear feature selection study. Here on average we find that if we take the 
 
 %\begin{figure}
